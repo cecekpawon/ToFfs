@@ -105,7 +105,8 @@ goto done
 :kext2ffs
   call:getFn "%~1"
   set b=%fn%
-  set c=%b%Compress
+  set b2=%b%Kext
+  set c=%b%KextCompress
 
   if "%kId%" GEQ "16" (
     echo Cannot convert "%~1", valid GUID limit exceed: id ^(%kId%^)
@@ -120,7 +121,7 @@ goto done
     if ["%b%"] == ["AppleEmulator"] (
       set id=1
     ) else (
-      if ["%b%"] == ["SmcEmulatorKext"] (
+      if ["%b%"] == ["SmcEmulator"] (
         set id=1
       ) else (
         if ["%b%"] == ["Disabler"] (
@@ -153,6 +154,7 @@ goto done
     )
   )
 
+
   if "%id%" GEQ "10" (
     cscript //nologo "%dTMP%\hex.vbs" %id%>"%dTMP%\hex.txt"
   ) else (
@@ -165,13 +167,13 @@ goto done
 
   rem %dBIN%\GenSec -s EFI_SECTION_PE32 -o "%dTMP%\%b%.pe32" "%dTMP%\%b%.bin"
   %dBIN%\GenSec -s EFI_SECTION_RAW -o "%dTMP%\%b%.pe32" "%dTMP%\%b%.bin"
-  %dBIN%\GenSec -s EFI_SECTION_USER_INTERFACE -n "%b%" -o "%dTMP%\%b%-1.pe32"
+  %dBIN%\GenSec -s EFI_SECTION_USER_INTERFACE -n "%b2%" -o "%dTMP%\%b%-1.pe32"
 
-  %dBIN%\GenFfs -t EFI_FV_FILETYPE_FREEFORM -g DADE100%gId%-1B31-4FE4-8557-26FCEFC78275 -o "%dFFS%\kexts\%b%.ffs" -i "%dTMP%\%b%.pe32" -i "%dTMP%\%b%-1.pe32"
+  %dBIN%\GenFfs -t EFI_FV_FILETYPE_FREEFORM -g DADE100%gId%-1B31-4FE4-8557-26FCEFC78275 -o "%dFFS%\kexts\%b2%.ffs" -i "%dTMP%\%b%.pe32" -i "%dTMP%\%b%-1.pe32"
   %dBIN%\GenSec -s EFI_SECTION_COMPRESSION -o "%dTMP%\%b%-2.pe32" "%dTMP%\%b%.pe32" "%dTMP%\%b%-1.pe32"
   %dBIN%\GenFfs -t EFI_FV_FILETYPE_FREEFORM -g DADE100%gId%-1B31-4FE4-8557-26FCEFC78275 -o "%dFFS%\kexts\compress\%c%.ffs" -i "%dTMP%\%b%-2.pe32"
 
-  echo - "%~1" will be Ffs "%id%" name in boot.log will be "%b%"
+  echo - "%~1" will be Ffs "%id%" name in boot.log will be "%b2%"
   goto:eof
 
 :done
