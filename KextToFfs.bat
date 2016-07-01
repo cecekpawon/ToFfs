@@ -1,6 +1,6 @@
 @echo off
 
-rem KextToFfs script by PAVO
+rem KextToFfs script by FredWst and STLVNUB
 rem Win port @cecekpawon | thrsh.net | 6/23/2016 3:09:41 PM
 
 set "workDir=%CD%"
@@ -8,7 +8,8 @@ set "dBIN=%workDir%\bin"
 set "dOZMDefault=%workDir%\ozmdefault"
 set "dOZM=%workDir%\ozm"
 set "dFFS=%workDir%\ffs"
-set "dEFI=%workDir%\efi"
+set "dDriver=%workDir%\driver"
+set "dApp=%workDir%\app"
 set "dKEXT=%workDir%\kexts"
 set "dTMP=%workDir%\tmp"
 
@@ -23,10 +24,11 @@ echo.
 
 rem :prepareDir
   for /R "%workDir%" %%i in (._*) do del /S "%%i"
-  rd /S /Q "%dFFS%"
+  rd /S /Q "%dFFS%">nul
   call:createDir "%dFFS%\ozm\compress"
   call:createDir "%dFFS%\ozmdefault\compress"
-  call:createDir "%dFFS%\efi\compress"
+  call:createDir "%dFFS%\driver\compress"
+  call:createDir "%dFFS%\app\compress"
   call:createDir "%dFFS%\kexts\compress"
   call:createDir "%dTMP%"
   fsutil file createnew "%dTMP%\NullTerminator" 1
@@ -40,9 +42,13 @@ rem :generateOzmosisDefaults
   echo Generate OzmosisDefaults:
   call:ozmdefault2ffs
 
-rem :generateEfi
-  echo Generate Efi:
-  for /R "%dEFI%" %%i in (*.efi) do call:efi2ffs "%%i"
+rem :generateEfiDriver
+  echo Generate Efi Driver:
+  for /R "%dDriver%" %%i in (*.efi) do call:driver2ffs "%%i"
+
+rem :generateEfiApp
+  echo Generate Efi App:
+  for /R "%dApp%" %%i in (*.efi) do call:app2ffs "%%i"
 
 rem :generateKext
   echo Generate Kexts:
@@ -87,19 +93,59 @@ goto done
   echo - "%dOZMDefault%\OzmosisDefaults.plist" will be Ffs "0" name in boot.log will be "OzmosisDefaults"
   goto:eof
 
-:efi2ffs
+:driver2ffs
   call:getFn "%~1"
   set b=%fn%
   set c=%b%Compress
 
-  %dBIN%\GenSec -s EFI_SECTION_PE32 -o "%dTMP%\%b%.pe32" "%~1"
-  %dBIN%\GenSec -s EFI_SECTION_USER_INTERFACE -n "%b%" -o "%dTMP%\%b%-1.pe32"
-  %dBIN%\GenFfs -t EFI_FV_FILETYPE_FREEFORM -g 4CF484CD-135F-4FDC-BAFB-1AA104B48D36 -o "%dFFS%\efi\%b%.ffs" -i "%dTMP%\%b%.pe32" -i "%dTMP%\%b%-1.pe32"
+  set guid=0
 
-  %dBIN%\GenSec -s EFI_SECTION_COMPRESSION -o "%dTMP%\%b%-2.pe32" "%dTMP%\%b%.pe32" "%dTMP%\%b%-1.pe32"
-  %dBIN%\GenFfs -t EFI_FV_FILETYPE_FREEFORM -g 4CF484CD-135F-4FDC-BAFB-1AA104B48D36 -o "%dFFS%\efi\compress\%c%.ffs" -i "%dTMP%\%b%-2.pe32"
+  if ["%b%"] == ["EnhancedFat"] (
+    set guid=961578FE-B6B7-44C3-AF35-6BC705CD2B1F
+  ) else (
+    if ["%b%"] == ["HfsPlus"] (
+      set guid=4CF484CD-135F-4FDC-BAFB-1AA104B48D36
+    ) else (
+      if ["%b%"] == ["Extfs"] (
+        set guid=B34E5765-2E04-4DAF-867F-7F40BE6FC33D
+      )
+    )
+  )
 
-  echo - "%~1" will be Ffs "0" name in boot.log will be "%b%"
+  if "%guid%" NEQ "0" (
+    %dBIN%\GenSec -s EFI_SECTION_PE32 -o "%dTMP%\%b%.pe32" "%~1"
+    %dBIN%\GenSec -s EFI_SECTION_USER_INTERFACE -n "%b%" -o "%dTMP%\%b%-1.pe32"
+    %dBIN%\GenFfs -t EFI_FV_FILETYPE_DRIVER -g %guid% -o "%dFFS%\driver\%b%.ffs" -i "%dTMP%\%b%.pe32" -i "%dTMP%\%b%-1.pe32"
+
+    %dBIN%\GenSec -s EFI_SECTION_COMPRESSION -o "%dTMP%\%b%-2.pe32" "%dTMP%\%b%.pe32" "%dTMP%\%b%-1.pe32"
+    %dBIN%\GenFfs -t EFI_FV_FILETYPE_DRIVER -g %guid% -o "%dFFS%\driver\compress\%c%.ffs" -i "%dTMP%\%b%-2.pe32"
+
+    echo - "%~1" will be Ffs "0" name in boot.log will be "%b%"
+  )
+  goto:eof
+
+:app2ffs
+  call:getFn "%~1"
+  set b=%fn%
+  set c=%b%Compress
+
+  set guid=0
+
+  if ["%b%"] == ["HermitShellX64"] (
+    set guid=C57AD6B7-0515-40A8-9D21-551652854E37
+  )
+
+  if "%guid%" NEQ "0" (
+    %dBIN%\GenSec -s EFI_SECTION_PE32 -o "%dTMP%\%b%.pe32" "%~1"
+    %dBIN%\GenSec -s EFI_SECTION_USER_INTERFACE -n "%b%" -o "%dTMP%\%b%-1.pe32"
+    %dBIN%\GenSec -s EFI_SECTION_GUID_DEFINED "%dTMP%\%b%.pe32" "%dTMP%\%b%-1.pe32" -o "%dTMP%\%b%-2.pe32"
+    %dBIN%\GenFfs -t EFI_FV_FILETYPE_APPLICATION -s -g %guid% -o "%dFFS%\app\%b%.ffs" -i "%dTMP%\%b%-2.pe32"
+
+    %dBIN%\GenSec -s EFI_SECTION_COMPRESSION -o "%dTMP%\%b%-3.pe32" "%dTMP%\%b%-2.pe32"
+    %dBIN%\GenFfs -t EFI_FV_FILETYPE_APPLICATION -s -g %guid% -o "%dFFS%\app\compress\%c%.ffs" -i "%dTMP%\%b%-3.pe32"
+
+    echo - "%~1" will be Ffs "0" name in boot.log will be "%b%"
+  )
   goto:eof
 
 :kext2ffs
@@ -153,7 +199,6 @@ goto done
       )
     )
   )
-
 
   if "%id%" GEQ "10" (
     cscript //nologo "%dTMP%\hex.vbs" %id%>"%dTMP%\hex.txt"
