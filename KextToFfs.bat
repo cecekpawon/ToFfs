@@ -10,7 +10,7 @@ set "dOZM=%workDir%\ozm"
 set "dFFS=%workDir%\ffs"
 set "dDriver=%workDir%\driver"
 set "dApp=%workDir%\app"
-set "dKEXT=%workDir%\kexts"
+set "dKEXT=%workDir%\kext"
 set "dTMP=%workDir%\tmp"
 
 set kId=10
@@ -29,7 +29,7 @@ rem :prepareDir
   call:createDir "%dFFS%\ozmdefault\compress"
   call:createDir "%dFFS%\driver\compress"
   call:createDir "%dFFS%\app\compress"
-  call:createDir "%dFFS%\kexts\compress"
+  call:createDir "%dFFS%\kext\compress"
   call:createDir "%dTMP%"
   fsutil file createnew "%dTMP%\NullTerminator" 1
   echo WScript.Echo Hex(WScript.Arguments(0))>"%dTMP%\hex.vbs"
@@ -51,7 +51,7 @@ rem :generateEfiApp
   for /R "%dApp%" %%i in (*.efi) do call:app2ffs "%%i"
 
 rem :generateKext
-  echo Generate Kexts:
+  echo Generate Kext:
   for /D %%i in ("%dKEXT%"\*) do call:kext2ffs "%%i"
 
 goto done
@@ -214,9 +214,9 @@ goto done
   %dBIN%\GenSec -s EFI_SECTION_RAW -o "%dTMP%\%b%.pe32" "%dTMP%\%b%.bin"
   %dBIN%\GenSec -s EFI_SECTION_USER_INTERFACE -n "%b2%" -o "%dTMP%\%b%-1.pe32"
 
-  %dBIN%\GenFfs -t EFI_FV_FILETYPE_FREEFORM -g DADE100%gId%-1B31-4FE4-8557-26FCEFC78275 -o "%dFFS%\kexts\%b2%.ffs" -i "%dTMP%\%b%.pe32" -i "%dTMP%\%b%-1.pe32"
+  %dBIN%\GenFfs -t EFI_FV_FILETYPE_FREEFORM -g DADE100%gId%-1B31-4FE4-8557-26FCEFC78275 -o "%dFFS%\kext\%b2%.ffs" -i "%dTMP%\%b%.pe32" -i "%dTMP%\%b%-1.pe32"
   %dBIN%\GenSec -s EFI_SECTION_COMPRESSION -o "%dTMP%\%b%-2.pe32" "%dTMP%\%b%.pe32" "%dTMP%\%b%-1.pe32"
-  %dBIN%\GenFfs -t EFI_FV_FILETYPE_FREEFORM -g DADE100%gId%-1B31-4FE4-8557-26FCEFC78275 -o "%dFFS%\kexts\compress\%c%.ffs" -i "%dTMP%\%b%-2.pe32"
+  %dBIN%\GenFfs -t EFI_FV_FILETYPE_FREEFORM -g DADE100%gId%-1B31-4FE4-8557-26FCEFC78275 -o "%dFFS%\kext\compress\%c%.ffs" -i "%dTMP%\%b%-2.pe32"
 
   echo - "%~1" will be Ffs "%id%" name in boot.log will be "%b2%"
   goto:eof

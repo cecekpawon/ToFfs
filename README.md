@@ -2,12 +2,12 @@
 
 Is a batch script port of original **kext2ffs** script [here](https://github.com/tuxuser/kext2ffs) to working under Windows.
 
-- Download latest [GenFfs](https://github.com/tianocore/edk2-BaseTools-win32/raw/master/GenFfs.exe) & [GenSec](https://github.com/tianocore/edk2-BaseTools-win32/raw/master/GenSec.exe), place into `bin` dir.
+- Download latest [GenFfs](https://github.com/tianocore/edk2-BaseTools-win32/raw/master/GenFfs.exe) & [GenSec](https://github.com/tianocore/edk2-BaseTools-win32/raw/master/GenSec.exe), place into `bin` dir. Below are all optional:
 - Place `Ozmosis.efi` + `DXE-Dependency.bin` in `ozm` dir
 - Place `OzmosisDefaults.plist` in `ozmdefault` dir
 - Place `.efi` driver in `driver` dir
 - Place `.efi` app in `app` dir
-- Place `.kext` to generate in `kexts` dir
+- Place `.kext` in `kext` dir
 
 All generated files will be in `ffs` dir
 
@@ -38,7 +38,7 @@ All generated files will be in `ffs` dir
 │   │   └───compress
 │   │           HfsPlusCompress.ffs
 │   │
-│   ├───kexts
+│   ├───kext
 │   │   │   SmcEmulatorKext.ffs
 │   │   │
 │   │   └───compress
@@ -56,7 +56,7 @@ All generated files will be in `ffs` dir
 │       └───compress
 │               OzmosisDefaultsCompress.ffs
 │
-├───kexts
+├───kext
 │   └───SmcEmulator.kext
 │       └───Contents
 │           │   Info.plist
